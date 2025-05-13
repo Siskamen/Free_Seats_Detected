@@ -1,0 +1,26 @@
+import os
+import random
+import shutil
+
+dataset_path = os.path.join(os.getcwd(), "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET")  # Папка с данными
+images_path = os.path.join(dataset_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\images")
+labels_path = os.path.join(dataset_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\labels")
+
+train_images_path = os.path.join(images_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\images\\train")
+val_images_path = os.path.join(images_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\images\\val")
+train_labels_path = os.path.join(labels_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\labels\\train")
+val_labels_path = os.path.join(labels_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\labels\\val")
+
+train_images = os.listdir(train_images_path)
+
+num_to_move = max(1, len(train_images) // 10)
+val_images = random.sample(train_images, num_to_move)
+
+for img_name in val_images:
+    shutil.move(os.path.join(train_images_path, img_name), val_images_path)
+
+    label_name = img_name.replace(".jpg", ".txt").replace(".png", ".txt")
+    if os.path.exists(os.path.join(train_labels_path, label_name)):
+        shutil.move(os.path.join(train_labels_path, label_name), val_labels_path)
+
+print(f"Перемещено {num_to_move} изображений в val")
