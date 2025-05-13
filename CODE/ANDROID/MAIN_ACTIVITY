@@ -1,0 +1,171 @@
+Kotlin
+package com.example.userapp
+
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
+import android.net.Uri
+import android.os.*
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import kotlinx.coroutines.*
+import org.tensorflow.lite.Interpreter
+import java.io.FileInputStream
+import java.nio.channels.FileChannel
+
+class MainActivity : ComponentActivity() {
+
+    private lateinit var interpreter: Interpreter
+    private val REQUEST_CODE_PICK_VIDEO = 123
+    private var isProcessing = false
+    private lateinit var freeSeatsState: MutableState<Int>
+    private lateinit var currentFrameState: MutableState<Bitmap?>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        loadModel()
+
+        setContent {
+            val scrollState = rememberScrollState()
+            val isMenuVisible = remember { mutableStateOf(false) }
+            val freeSeats = remember { mutableStateOf(0) }
+            val currentFrame = remember { mutableStateOf<Bitmap?>(null) }
+
+            freeSeatsState = freeSeats
+            currentFrameState = currentFrame
+
+            Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF212326)) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                    AsyncImage(model = R.drawable.map_screenshot, contentDescription = null,
+                        modifier = Modifier.fillMaxWidth().height(400.dp))
+
+                    Button(
+                        onClick = { isMenuVisible.value = !isMenuVisible.value },
+                        modifier = Modifier.padding(16.dp).fillMaxWidth()
+                    ) {
+                        Text(if (isMenuVisible.value) "Скрыть данные" else "Показать данные")
+                    }
+
+                    if (isMenuVisible.value) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                            Text(
+                                "Свободных мест: ${freeSeats.value}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.White
+                            )
+
+                            currentFrame.value?.let {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Image(
+                                    bitmap = it.asImageBitmap(),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = { selectVideo() }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Добавить видео")
+                            }
+                        }
+                    }
+
+                    AsyncImage(model = R.drawable.map_screenshot_bottom, contentDescription = null,
+                        modifier = Modifier.fillMaxWidth().height(400.dp))
+                }
+            }
+        }
+    }
+
+    private fun selectVideo() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply { type = "video/*" }
+        startActivityForResult(intent, REQUEST_CODE_PICK_VIDEO)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_PICK_VIDEO && resultCode == Activity.RESULT_OK && !isProcessing) {
+            data?.data?.let {
+                isProcessing = true
+                startProcessing(it)
+            }
+        }
+    }
+
+    private fun loadModel() {
+        val file = assets.openFd("best55_cuda_float32_with_metadata.tflite")
+        val model = FileInputStream(file.fileDescriptor).channel
+            .map(FileChannel.MapMode.READ_ONLY, file.startOffset, file.declaredLength)
+        interpreter = Interpreter(model)
+    }
+
+    private fun startProcessing(videoUri: Uri) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val retriever = MediaMetadataRetriever()
+            try {
+                retriever.setDataSource(this@MainActivity, videoUri)
+                val durationUs = (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                    ?: 0L) * 1000
+                val intervalUs = 200_000L
+                var timeUs = 0L
+
+                while (timeUs < durationUs) {
+                    retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST)?.let { bitmap ->
+                        val seats = runModel(bitmap)
+                        withContext(Dispatchers.Main) {
+                            freeSeatsState.value = seats
+                            currentFrameState.value = bitmap
+                        }
+                    }
+                    timeUs += intervalUs
+                    delay(200)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                retriever.release()
+                isProcessing = false
+            }
+        }
+    }
+
+    private fun runModel(bitmap: Bitmap): Int {
+        val inputSize = 640
+        val scaled = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, true)
+        val input = Array(1) { Array(inputSize) { Array(inputSize) { FloatArray(3) } } }
+
+        for (x in 0 until inputSize) {
+            for (y in 0 until inputSize) {
+                val px = scaled.getPixel(x, y)
+                input[0][x][y][0] = (px shr 16 and 0xFF) / 255f
+                input[0][x][y][1] = (px shr 8 and 0xFF) / 255f
+                input[0][x][y][2] = (px and 0xFF) / 255f
+            }
+        }
+
+        val output = Array(1) { Array(6) { FloatArray(8400) } }
+        interpreter.run(input, output)
+
+        val threshold = 0.74f
+        var seats = 0
+
+        for (i in 0 until 8400) {
+            val conf = output[0][4][i]
+            val cls = output[0][5][i].toInt()
+            if (conf > threshold && cls == 0) seats++
+        }
+        return seats
+    }
+}
