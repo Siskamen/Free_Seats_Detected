@@ -1,0 +1,64 @@
+Kotlin
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <ImageView
+        android:id="@+id/topImageView"
+        android:layout_width="match_parent"
+        android:layout_height="465dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/map_screenshot" />
+
+    <Button
+        android:id="@+id/toggleMenuButton"
+        android:layout_width="170dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/topImageView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="1dp"
+        android:text="Показать данные" />
+
+    <LinearLayout
+        android:id="@+id/slidingPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@id/toggleMenuButton"
+        android:background="#2C2C2C"
+        android:visibility="gone"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/freeSeatsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Свободных мест: 15"
+            android:textSize="20sp"
+            android:background="#2C2C2C"
+            android:textColor="#000000" />
+
+        <!-- 🛠 Добавлена новая кнопка для выбора видео -->
+        <Button
+            android:id="@+id/addVideoButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Добавить видео"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:backgroundTint="#FF6200EE"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/bottomImageView"
+        android:layout_width="match_parent"
+        android:layout_height="567dp"
+        android:layout_below="@id/slidingPanel"
+        android:scaleType="fitXY"
+        android:src="@drawable/map_screenshot_bottom" />
+
+</RelativeLayout>
