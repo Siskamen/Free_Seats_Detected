@@ -2,14 +2,14 @@ import os
 import random
 import shutil
 
-dataset_path = os.path.join(os.getcwd(), "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET")  # Папка с данными
-images_path = os.path.join(dataset_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\images")
-labels_path = os.path.join(dataset_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\labels")
+dataset_path = os.path.join(os.getcwd(), "Your path")  
+images_path = os.path.join(dataset_path, "Your path")
+labels_path = os.path.join(dataset_path, "Your path")
 
-train_images_path = os.path.join(images_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\images\\train")
-val_images_path = os.path.join(images_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\images\\val")
-train_labels_path = os.path.join(labels_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\labels\\train")
-val_labels_path = os.path.join(labels_path, "C:\\Users\Иван\PycharmProjects\PythonProject\.venv\КУРСОВАЯ\DATASET\\340401_Avtobus\labels\\val")
+train_images_path = os.path.join(images_path, "Your path")
+val_images_path = os.path.join(images_path, "Your path")
+train_labels_path = os.path.join(labels_path, "Your path")
+val_labels_path = os.path.join(labels_path, "Your path")
 
 train_images = os.listdir(train_images_path)
 
