@@ -31,8 +31,8 @@ def augment_image(image):
 def main():
     results = model.train(
         data=config_path,
-        epochs=1,
-        batch=32,
+        epochs=100,
+        batch=15,
         imgsz=640,
         device=device1,
         augment=True,
